@@ -120,6 +120,7 @@ contract LiarsPokerMasterContract {
         address indexed winner,
         uint256 prizePool
     );
+    event TurnChanged(uint256 roomId, address newTurn);
     event RoomChargeWithdrawn(address indexed owner, uint256 amount);
 
     // Modifiers
@@ -319,7 +320,7 @@ contract LiarsPokerMasterContract {
         room.totalPrizePool += msg.value;
 
         updateTurn(_roomId);
-
+        
         emit BidPlaced(_roomId, msg.sender, _digit, _quantity, msg.value);
     }
 
@@ -442,9 +443,11 @@ contract LiarsPokerMasterContract {
                 break;
             }
         }
-        room.currentTurn = room.activePlayers[
+        address NewTurn = room.activePlayers[
             (currentIndex + 1) % room.activePlayers.length
         ];
+        room.currentTurn = NewTurn;
+        emit TurnChanged(_roomId, NewTurn);
     }
 
     function getCurrentBid(uint256 _roomId)
@@ -476,7 +479,8 @@ contract LiarsPokerMasterContract {
             address creator,
             GameState state,
             uint256 prizePool,
-            address[] memory players
+            address[] memory players,
+            address  currentTurn
         )
     {
         GameRoom storage room = gameRooms[_roomId];
@@ -484,7 +488,8 @@ contract LiarsPokerMasterContract {
             room.creator,
             room.currentState,
             room.totalPrizePool,
-            room.activePlayers
+            room.activePlayers,
+            room.currentTurn
         );
     }
 
@@ -547,4 +552,29 @@ contract LiarsPokerMasterContract {
 
         return result;
     }
+        /**
+     * @notice Retrieve all active game rooms in the WAITING state
+     * @return Array of active room IDs in the WAITING state
+     */
+    function getWaitingRooms() external view returns (uint256[] memory) {
+        uint256[] memory waitingRooms = new uint256[](nextRoomId - 1);
+        uint256 count = 0;
+
+        for (uint256 i = 1; i < nextRoomId; i++) {
+            GameState state = gameRooms[i].currentState;
+            if (gameRooms[i].exists && state == GameState.WAITING) {
+                waitingRooms[count] = i;
+                count++;
+            }
+        }
+
+        // Resize the array to match the actual count
+        uint256[] memory result = new uint256[](count);
+        for (uint256 i = 0; i < count; i++) {
+            result[i] = waitingRooms[i];
+        }
+
+        return result;
+    }
+
 }
