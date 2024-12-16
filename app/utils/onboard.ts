@@ -76,7 +76,7 @@ export const GetParams = async () => {
   response.account = currentAccount;
 
   // Base Sepolia Chain ID is 84532
-  if (getChainID() !== 84532) {
+  if (getChainID() !== 296) {
     response.step = 2;
     return response;
   }
@@ -102,15 +102,15 @@ export async function SwitchNetwork(): Promise<void> {
     await window?.ethereum?.request({
       method: 'wallet_addEthereumChain',
       params: [{
-        chainId: '0x14A34',
-        chainName: 'Base Sepolia',
+        chainId: '0x128', 
+        chainName: 'Hedera Testnet',
         nativeCurrency: {
-          name: 'ETH',
-          symbol: 'ETH',
-          decimals: 18,
+          name: 'Hedera',
+          symbol: 'HBAR',
+          decimals: 8
         },
-        rpcUrls: ['https://sepolia.base.org'],
-        blockExplorerUrls: ['https://sepolia.basescan.org'],
+        rpcUrls: ['https://296.rpc.thirdweb.com/'],
+        blockExplorerUrls: ['https://hashscan.io/testnet'],
       }],
     });
   } catch (error) {

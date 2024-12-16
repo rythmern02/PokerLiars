@@ -10,6 +10,8 @@
   },
   "dependencies": {
     "@ant-design/icons": "^5.5.2",
+    "@huddle01/react": "^2.2.4",
+    "@huddle01/server-sdk": "^2.5.5",
     "antd": "^5.22.4",
     "clsx": "^2.1.1",
     "framer-motion": "^11.14.1",

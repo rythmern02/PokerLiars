@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { cn } from "../utils/cn";
 import { useState } from 'react';
 import { useGlobalContext } from '../context/GlobalContext';
+import Image from 'next/image';
 
 const navigation = [
   {
@@ -14,7 +15,7 @@ const navigation = [
     icon: Home
   },
   {
-    name: "Ongoing Bids",
+    name: "Join",
     href: "/joingames",
     icon: Layers
   },
@@ -77,7 +78,7 @@ export function Sidebar() {
     <div className="flex h-screen w-24 flex-col items-center border-r border-zinc-800 bg-zinc-950/95 py-8 backdrop-blur-sm z-20">
       {/* Game Logo */}
       <div className="mb-8">
-        <img src="/logo.png" alt="Liar's Poker" className="w-12 h-12" />
+        <Image src="/favicon.ico" alt="Liar's Poker" className="w-12 h-12" width={100} height={100} />
       </div>
 
       <nav className="flex flex-1 flex-col items-center gap-6">
@@ -100,7 +101,7 @@ export function Sidebar() {
               />
               <span
                 className={cn(
-                  "absolute -bottom-5 text-xs font-medium text-zinc-400 transition-colors group-hover:text-[#98C23D] text-center",
+                  "absolute -bottom-5 text-2xl font-medium text-zinc-400 transition-colors group-hover:text-[#98C23D] text-center",
                   isActive && "text-[#98C23D]"
                 )}
               >
@@ -137,7 +138,7 @@ export function Sidebar() {
             >
               <div className="flex items-center justify-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-[#98C23D] animate-pulse" />
-                <span className="text-xs text-[#98C23D] truncate">
+                <span className="text-2xl text-[#98C23D] truncate">
                   {`${walletAddress.slice(0, 4)}...${walletAddress.slice(-4)}`}
                 </span>
               </div>
@@ -151,7 +152,7 @@ export function Sidebar() {
                   className="w-full flex items-center gap-2 px-4 py-3 hover:bg-zinc-800 transition-colors"
                 >
                   <SwitchCamera className="h-4 w-4 text-[#98C23D]" />
-                  <span className="text-xs text-zinc-300">Switch Wallet</span>
+                  <span className="text-2xl text-zinc-300">Switch Wallet</span>
                 </button>
                 <button
                   onClick={handleDisconnect}
@@ -159,7 +160,7 @@ export function Sidebar() {
                            border-t border-zinc-800"
                 >
                   <LogOut className="h-4 w-4 text-red-400" />
-                  <span className="text-xs text-zinc-300">Disconnect</span>
+                  <span className="text-2xl text-zinc-300">Disconnect</span>
                 </button>
               </div>
             )}

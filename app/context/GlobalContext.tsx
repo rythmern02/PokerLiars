@@ -71,12 +71,12 @@ export const GlobalContextProvider: React.FC<{ children: React.ReactNode }> = ({
       setProvider(newProvider);
       setWalletAddress(address);
 
-      // Check if we're on Base Sepolia
-      if (Number(chainId) !== 84532) {
+      // Check if we're on Hedera 
+      if (Number(chainId) !== 296) {
         setShowAlert({
           status: true,
           type: 'info',
-          message: 'Please switch to Base Sepolia network',
+          message: 'Please switch to Hedera network',
         });
         await SwitchNetwork();
         return;

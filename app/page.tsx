@@ -1,20 +1,8 @@
 "use client";
-import Image from "next/image";
 import { useGlobalContext } from "./context/GlobalContext";
 import { motion } from "framer-motion";
-import { Press_Start_2P, Pixelify_Sans } from "next/font/google";
+import Head from "next/head";
 import Link from "next/link";
-
-const pixelFont = Press_Start_2P({
-  weight: "400",
-  subsets: ["latin"],
-  variable: "--font-pixel",
-});
-
-const pixelifyFont = Pixelify_Sans({
-  subsets: ["latin"],
-  variable: "--font-pixelify",
-});
 
 // Enhanced Floating Number with Framer Motion
 const FloatingNumber = ({
@@ -26,7 +14,7 @@ const FloatingNumber = ({
 }) => (
   <motion.div
     initial={{ opacity: 0, y: 20 }}
-    animate={{ 
+    animate={{
       opacity: [0.1, 0.2, 0.1],
       y: [0, -20, 0],
     }}
@@ -68,8 +56,8 @@ const AnimatedPieChart = () => {
 
         {/* Winning Segment - Overlaid on top */}
         <div className="absolute inset-0">
-          <motion.svg 
-            className="w-full h-full" 
+          <motion.svg
+            className="w-full h-full"
             viewBox="0 0 100 100"
             initial={{ rotate: -90 }}
           >
@@ -138,9 +126,13 @@ const AnimatedPieChart = () => {
         {/* Animated Dots */}
         {[...Array(12)].map((_, i) => {
           // Pre-calculate and round the values to avoid hydration mismatches
-          const top = `${Math.round((50 + 45 * Math.sin((i * 2 * Math.PI) / 12)) * 100) / 100}%`;
-          const left = `${Math.round((50 + 45 * Math.cos((i * 2 * Math.PI) / 12)) * 100) / 100}%`;
-          
+          const top = `${
+            Math.round((50 + 45 * Math.sin((i * 2 * Math.PI) / 12)) * 100) / 100
+          }%`;
+          const left = `${
+            Math.round((50 + 45 * Math.cos((i * 2 * Math.PI) / 12)) * 100) / 100
+          }%`;
+
           return (
             <motion.div
               key={i}
@@ -169,11 +161,11 @@ const AnimatedPieChart = () => {
       >
         <div className="flex items-center gap-3">
           <div className="w-4 h-4 rounded-full bg-[#98C23D] shadow-[0_0_10px_rgba(152,194,61,0.5)]" />
-          <span className="text-zinc-300 text-lg">Wins (75%)</span>
+          <span className="text-zinc-300 text-2xl">Wins (75%)</span>
         </div>
         <div className="flex items-center gap-3">
           <div className="w-4 h-4 rounded-full bg-[#98C23D]/20" />
-          <span className="text-zinc-400 text-lg">Losses (25%)</span>
+          <span className="text-zinc-400 text-3xl">Losses (25%)</span>
         </div>
       </motion.div>
     </motion.div>
@@ -181,7 +173,8 @@ const AnimatedPieChart = () => {
 };
 
 export default function LiarSpoker() {
-  const { isWalletConnected, connectWallet, walletAddress } = useGlobalContext();
+  const { isWalletConnected, connectWallet, walletAddress } =
+    useGlobalContext();
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -205,119 +198,125 @@ export default function LiarSpoker() {
   };
 
   return (
-    <div className={`min-h-screen bg-[#0A0A0A] ${pixelFont.variable} overflow-hidden relative 
-      px-6 sm:px-8 md:px-10 lg:px-12`}>
-      {/* Adjusted Gradient Background */}
-      <motion.div
-        className="absolute inset-0 pointer-events-none"
-        animate={{
-          background: [
-            'radial-gradient(circle at 20% 50%, rgba(152, 194, 61, 0.15) 0%, rgba(10, 10, 10, 0) 50%)',
-            'radial-gradient(circle at 20% 50%, rgba(152, 194, 61, 0.2) 0%, rgba(10, 10, 10, 0) 70%)',
-            'radial-gradient(circle at 20% 50%, rgba(152, 194, 61, 0.15) 0%, rgba(10, 10, 10, 0) 50%)',
-          ],
-        }}
-        transition={{
-          duration: 4,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
-      />
-
-      {/* Main Content */}
-      <motion.div 
-        className="p-4 sm:p-6 md:p-8 relative flex items-center min-h-screen"
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
+    <>
+      <div
+        className={`min-h-screen bg-[#0A0A0A] overflow-hidden relative 
+      px-6 sm:px-8 md:px-10 lg:px-12`}
       >
-        <div className="relative z-10">
-          {/* Animated Logo */}
-          <motion.h1 
-            className="text-white text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-[var(--font-pixel)] tracking-tighter leading-none"
-            variants={itemVariants}
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-          >
-            LIAR'S POKER
-          </motion.h1>
+        {/* Adjusted Gradient Background */}
+        <motion.div
+          className="absolute inset-0 pointer-events-none"
+          animate={{
+            background: [
+              "radial-gradient(circle at 20% 50%, rgba(152, 194, 61, 0.15) 0%, rgba(10, 10, 10, 0) 50%)",
+              "radial-gradient(circle at 20% 50%, rgba(152, 194, 61, 0.2) 0%, rgba(10, 10, 10, 0) 70%)",
+              "radial-gradient(circle at 20% 50%, rgba(152, 194, 61, 0.15) 0%, rgba(10, 10, 10, 0) 50%)",
+            ],
+          }}
+          transition={{
+            duration: 4,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        />
 
-          {/* Rest of the content with adjusted margins */}
-          <motion.p 
-            className="text-zinc-400 text-base sm:text-lg md:text-xl mt-3 sm:mt-4 font-light tracking-wide"
-            variants={itemVariants}
-          >
-            Master the Art of Deception
-          </motion.p>
+        {/* Main Content */}
+        <motion.div
+          className=" top-14 p-4 sm:p-6 md:p-8 relative flex  min-h-screen"
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+        >
+          <div className="relative z-10">
+            {/* Animated Logo */}
+            <motion.h1
+              className="text-white text-3xl sm:text-7xl md:text-8xl lg:text-[35vh]  leading-none"
+              variants={itemVariants}
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
+              
+            >
+              Liar's Poker
+            </motion.h1>
 
-          <motion.div 
-            className="flex flex-row gap-6 mt-6 sm:mt-8"
-            variants={itemVariants}
-          >
-            <motion.div className="text-zinc-500">
-              <span className="block text-lg sm:text-xl text-[#98C23D] font-bold">
-                2.5K+
-              </span>
-              <span className="text-sm sm:text-base">Active Players</span>
+            {/* Rest of the content with adjusted margins */}
+            <motion.p
+              className="text-zinc-400 text-base sm:text-lg md:text-5xl mt-3 sm:mt-4 font-light tracking-wide"
+              variants={itemVariants}
+              style={{fontFamily: "jersey 10"}}
+            >
+              Master the Art of Deception
+            </motion.p>
+
+            <motion.div
+              className="flex flex-row gap-6 mt-6 sm:mt-8"
+              variants={itemVariants}
+            >
+              <motion.div className="text-zinc-500">
+                <span className="block text-lg sm:text-3xl text-[#98C23D] font-bold">
+                  2.5K+
+                </span>
+                <span className="text-sm sm:text-base">Active Players</span>
+              </motion.div>
+              <motion.div className="text-zinc-500">
+                <span className="block text-lg sm:text-3xl text-[#98C23D] font-bold">
+                  10K+
+                </span>
+                <span className="text-3xl sm:text-base ">Games Played</span>
+              </motion.div>
             </motion.div>
-            <motion.div className="text-zinc-500">
-              <span className="block text-lg sm:text-xl text-[#98C23D] font-bold">
-                10K+
-              </span>
-              <span className="text-sm sm:text-base">Games Played</span>
-            </motion.div>
-          </motion.div>
 
-          <motion.div 
-            className="flex flex-row gap-4 mt-6 sm:mt-8"
-            variants={itemVariants}
-          >
-            <Link href="/choosegame">
-              <motion.button 
-                className="bg-[#98C23D] text-black text-sm sm:text-base px-5 sm:px-6 py-2.5 sm:py-3 rounded-lg font-medium"
-                whileHover={{ scale: 1.05, backgroundColor: "#88b22d" }}
+            <motion.div
+              className="flex flex-row gap-4 mt-6 sm:mt-8"
+              variants={itemVariants}
+            >
+              <Link href="/choosegame">
+                <motion.button
+                  className="bg-[#98C23D] text-black text-5xl  px-5 sm:px-6 py-2.5 sm:py-3 rounded-lg font-medium"
+                  whileHover={{ scale: 1.05, backgroundColor: "#88b22d" }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  Play Now
+                </motion.button>
+              </Link>
+              <motion.button
+                className="border border-zinc-700 text-white text-5xl px-5 sm:px-6 py-2.5 sm:py-3 rounded-lg font-medium"
+                whileHover={{ scale: 1.05, borderColor: "#98C23D" }}
                 whileTap={{ scale: 0.95 }}
               >
-                Play Now
+                Learn Rules
               </motion.button>
-            </Link>
-            <motion.button 
-              className="border border-zinc-700 text-white text-sm sm:text-base px-5 sm:px-6 py-2.5 sm:py-3 rounded-lg font-medium"
-              whileHover={{ scale: 1.05, borderColor: "#98C23D" }}
-              whileTap={{ scale: 0.95 }}
-            >
-              Learn Rules
-            </motion.button>
+            </motion.div>
+          </div>
+
+          {/* Adjusted Pie Chart Position - Only visible on larger screens */}
+          <div className="hidden lg:block absolute left-1/2 transform -translate-x-1/2 top-1/2 -translate-y-1/2">
+            <AnimatedPieChart />
+          </div>
+
+          {/* Simplified decorative elements */}
+          <motion.div
+            className="absolute bottom-0 right-0 w-[20rem] sm:w-[25rem] h-[25rem] opacity-40"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.4 }}
+            transition={{ duration: 1.5 }}
+          >
+            <motion.div
+              className="absolute bottom-0 right-0 w-full h-full bg-gradient-to-tl from-[#98C23D]/20 via-zinc-800/20 to-transparent rounded-tl-full"
+              animate={{
+                scale: [1, 1.05, 1],
+                opacity: [0.2, 0.3, 0.2],
+              }}
+              transition={{
+                duration: 4,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+            />
           </motion.div>
-        </div>
-
-        {/* Adjusted Pie Chart Position - Only visible on larger screens */}
-        <div className="hidden lg:block absolute left-1/2 transform -translate-x-1/2 top-1/2 -translate-y-1/2">
-          <AnimatedPieChart />
-        </div>
-
-        {/* Simplified decorative elements */}
-        <motion.div 
-          className="absolute bottom-0 right-0 w-[20rem] sm:w-[25rem] h-[25rem] opacity-40"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 0.4 }}
-          transition={{ duration: 1.5 }}
-        >
-          <motion.div 
-            className="absolute bottom-0 right-0 w-full h-full bg-gradient-to-tl from-[#98C23D]/20 via-zinc-800/20 to-transparent rounded-tl-full"
-            animate={{ 
-              scale: [1, 1.05, 1],
-              opacity: [0.2, 0.3, 0.2],
-            }}
-            transition={{
-              duration: 4,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-          />
         </motion.div>
-      </motion.div>
-    </div>
+      </div>
+    </>
   );
 }

@@ -39,7 +39,7 @@ export default function ChooseGame() {
         <motion.h1
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-4xl md:text-5xl text-white font-[var(--font-pixel)] mb-16 text-center"
+          className="text-4xl md:text-[15vh] text-white font-[var(--font-pixel)] mb-16 text-center"
         >
           Choose Your Path
         </motion.h1>
@@ -77,8 +77,8 @@ export default function ChooseGame() {
                   </motion.div>
 
                   {/* Text Content */}
-                  <h2 className="text-2xl text-white font-[var(--font-pixel)] mb-4">Join Game</h2>
-                  <p className="text-zinc-400">Enter an existing game room and challenge other players</p>
+                  <h2 className="text-5xl text-white mb-4">Join Game</h2>
+                  <p className="text-zinc-400 text-xl">Enter an existing game room and challenge other players</p>
 
                   {/* Animated Border */}
                   <div className="absolute inset-0 rounded-2xl transition-all duration-500
@@ -119,8 +119,8 @@ export default function ChooseGame() {
                   </motion.div>
 
                   {/* Text Content */}
-                  <h2 className="text-2xl text-white font-[var(--font-pixel)] mb-4">Create Game</h2>
-                  <p className="text-zinc-400">Start a new game room and invite others to join</p>
+                  <h2 className="text-5xl text-white  mb-4">Create Game</h2>
+                  <p className="text-zinc-400 text-xl">Start a new game room and invite others to join</p>
 
                   {/* Animated Border */}
                   <div className="absolute inset-0 rounded-2xl transition-all duration-500

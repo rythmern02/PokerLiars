@@ -11,8 +11,8 @@ contract LiarsPokerMasterContract {
     // Constants for game configuration
     uint256 public constant MIN_PLAYERS = 2;
     uint256 public constant MAX_PLAYERS = 6;
-    uint256 public constant MIN_BID_AMOUNT = 0.0001 ether;
-    uint256 public constant ROOM_CHARGE = 0.0001 ether;
+    uint256 public constant MIN_BID_AMOUNT = 1; // 0.0001 HBAR
+    uint256 public constant ROOM_CHARGE = 1; // 0.0001 HBAR
 
     // Owner address
     address public owner;
@@ -64,6 +64,8 @@ contract LiarsPokerMasterContract {
         address creator;
         GameState currentState;
         uint256 creationTimestamp;
+        uint256 minBid; // Minimum bid amount for this room
+        uint256 numberOfPlayers; // Required number of players to start
         address[] activePlayers;
         mapping(address => RoomPlayer) players;
         Bid currentBid;
@@ -88,11 +90,15 @@ contract LiarsPokerMasterContract {
         uint256 serialNumber,
         uint256 timestamp
     );
+    // Event emitted when a room is created
     event RoomCreated(
         uint256 indexed roomId,
         address indexed creator,
-        uint256 timestamp
+        uint256 timestamp,
+        uint256 minBid,
+        uint256 numberOfPlayers
     );
+
     event PlayerJoined(
         uint256 indexed roomId,
         address indexed player,
@@ -103,6 +109,7 @@ contract LiarsPokerMasterContract {
         address[] players,
         uint256 startTimestamp
     );
+
     event BidPlaced(
         uint256 indexed roomId,
         address indexed bidder,
@@ -203,19 +210,37 @@ contract LiarsPokerMasterContract {
     }
 
     /**
-     * @notice Create a new game room
+     * @notice Create a new game room with custom parameters
+     * @param _minBid The minimum bid amount for the game room
+     * @param _numberOfPlayers The number of players required to start the game
      * @return roomId The unique identifier of the created game room
      */
-    function createGameRoom() external returns (uint256 roomId) {
+    function createGameRoom(uint256 _minBid, uint256 _numberOfPlayers)
+        external
+        returns (uint256 roomId)
+    {
+        require(_minBid >= MIN_BID_AMOUNT, "Minimum bid is too low");
+        require(
+            _numberOfPlayers >= MIN_PLAYERS && _numberOfPlayers <= MAX_PLAYERS,
+            "Invalid number of players"
+        );
         roomId = nextRoomId++;
         GameRoom storage room = gameRooms[roomId];
         room.roomId = roomId;
         room.creator = msg.sender;
         room.currentState = GameState.CREATED;
+        room.minBid = _minBid;
+        room.numberOfPlayers = _numberOfPlayers;
         room.creationTimestamp = block.timestamp;
         room.exists = true;
 
-        emit RoomCreated(roomId, msg.sender, block.timestamp);
+        emit RoomCreated(
+            roomId,
+            msg.sender,
+            block.timestamp,
+            _minBid,
+            _numberOfPlayers
+        );
     }
 
     /**
@@ -228,7 +253,7 @@ contract LiarsPokerMasterContract {
         roomExists(_roomId)
         onlyRegisteredPlayer
     {
-        require(msg.value == ROOM_CHARGE, "Incorrect room charge");
+        require(msg.value >= ROOM_CHARGE, "Incorrect room charge");
 
         GameRoom storage room = gameRooms[_roomId];
         require(
@@ -260,19 +285,37 @@ contract LiarsPokerMasterContract {
     }
 
     /**
-     * @notice Start the game
+     * @notice Start the game and assign serial numbers to players
      * @param _roomId The ID of the room to start
+     * @param _serialNumbers An array of serial numbers to assign to the players
      */
-    function startGame(uint256 _roomId)
+    function startGame(uint256 _roomId, uint256[] calldata _serialNumbers)
         external
         roomExists(_roomId)
         correctGameState(_roomId, GameState.WAITING)
     {
         GameRoom storage room = gameRooms[_roomId];
-        require(room.activePlayers.length >= MIN_PLAYERS, "Not enough players");
 
+        // Ensure the number of serial numbers matches the number of players
+        require(
+            _serialNumbers.length == room.activePlayers.length,
+            "Mismatch between players and serial numbers"
+        );
+
+        require(
+            room.activePlayers.length >= room.numberOfPlayers,
+            "Not enough players"
+        );
+
+        // Assign serial numbers to players
+        for (uint256 i = 0; i < room.activePlayers.length; i++) {
+            address player = room.activePlayers[i];
+            room.players[player].serialNumber = _serialNumbers[i];
+        }
+
+        // Update the game state to IN_PROGRESS
         room.currentState = GameState.IN_PROGRESS;
-        room.currentTurn = room.activePlayers[0];
+        room.currentTurn = room.activePlayers[0]; // Set the first player's turn
 
         emit GameStarted(_roomId, room.activePlayers, block.timestamp);
     }
@@ -320,7 +363,7 @@ contract LiarsPokerMasterContract {
         room.totalPrizePool += msg.value;
 
         updateTurn(_roomId);
-        
+
         emit BidPlaced(_roomId, msg.sender, _digit, _quantity, msg.value);
     }
 
@@ -480,7 +523,7 @@ contract LiarsPokerMasterContract {
             GameState state,
             uint256 prizePool,
             address[] memory players,
-            address  currentTurn
+            address currentTurn
         )
     {
         GameRoom storage room = gameRooms[_roomId];
@@ -552,7 +595,8 @@ contract LiarsPokerMasterContract {
 
         return result;
     }
-        /**
+
+    /**
      * @notice Retrieve all active game rooms in the WAITING state
      * @return Array of active room IDs in the WAITING state
      */
@@ -576,5 +620,4 @@ contract LiarsPokerMasterContract {
 
         return result;
     }
-
 }

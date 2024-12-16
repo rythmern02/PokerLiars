@@ -79,6 +79,15 @@ interface Bid {
   timestamp: string;
 }
 
+interface GameState {
+  players: string[];
+  currentTurn: string;
+  currentBid: any;
+  myNumber: string | null;
+  gameStatus: string;
+  [key: string]: any;
+}
+
 export default function GameplayPage({ params }: { params: Promise<{ id: string }> }) {
   // Correctly unwrap params
   const resolvedParams = React.use(params);
@@ -88,7 +97,7 @@ export default function GameplayPage({ params }: { params: Promise<{ id: string 
     currentTurn: '',
     currentBid: null,
     myNumber: null,
-    gameStatus: 'waiting'
+    gameStatus: 1
   });
   const [bidInput, setBidInput] = useState({ digit: 0, quantity: 1, betAmount: 0 });
   const [chatMessage, setChatMessage] = useState('');
@@ -100,42 +109,18 @@ export default function GameplayPage({ params }: { params: Promise<{ id: string 
     { player: "0x8765...4321", quantity: 4, digit: 5, timestamp: "3 mins ago" },
     { player: "0x9876...1234", quantity: 2, digit: 7, timestamp: "5 mins ago" },
   ]);
-  const [sampleParticipants] = useState([
-    { 
-      address: "0x1234...5678", 
-      isCurrentTurn: true,
-      status: "active",
-      lastAction: "Bid 3×5"
-    },
-    { 
-      address: "0x8765...4321", 
-      isCurrentTurn: false,
-      status: "active",
-      lastAction: "Waiting"
-    },
-    { 
-      address: "0x9876...1234", 
-      isCurrentTurn: false,
-      status: "active",
-      lastAction: "Called Liar"
-    },
-    { 
-      address: "0x5432...9876", 
-      isCurrentTurn: false,
-      status: "active",
-      lastAction: "Passed"
-    },
-    { 
-      address: "0xABCD...EFGH", 
-      isCurrentTurn: false,
-      status: "active",
-      lastAction: "Waiting"
-    }
-  ]);
   const [mySerialNumber] = useState("7391845260");
   const [isMyTurn, setIsMyTurn] = useState(false);
   const [players, setPlayers] = useState<string[]>([]);
   const [currentTurnIndex, setCurrentTurnIndex] = useState(0);
+  const [isStartingGame, setIsStartingGame] = useState(false);
+  const [showWinnerModal, setShowWinnerModal] = useState(false);
+  const [winner, setWinner]: any = useState<{
+    address: string;
+    amount: string;
+    reason: string;
+  } | null>(null);
+  const [isRevealing, setIsRevealing] = useState(false);
   
   useEffect(() => {
     const updateGameState = async () => {
@@ -147,11 +132,11 @@ export default function GameplayPage({ params }: { params: Promise<{ id: string 
         const currentTurn = roomDetails.currentTurn;
         
         setPlayers(currentPlayers);
-        setGameState((prev: any) => ({
+        setGameState((prev: GameState) => ({
           ...prev,
           players: currentPlayers,
           currentTurn,
-          gameStatus: roomDetails.gameStatus,
+          gameStatus: roomDetails.currentState,
           prizePool: roomDetails.prizePool
         }));
         console.log("gameState", gameState);
@@ -174,6 +159,7 @@ export default function GameplayPage({ params }: { params: Promise<{ id: string 
 
     // Set up real-time updates
     if (contract) {
+      contract.on("GameStarted", updateGameState);
       contract.on("BidPlaced", updateGameState);
       contract.on("LiarCalled", updateGameState);
       contract.on("GameEnded", updateGameState);
@@ -181,6 +167,7 @@ export default function GameplayPage({ params }: { params: Promise<{ id: string 
       contract.on("TurnChanged", updateGameState);
 
       return () => {
+        contract.off("GameStarted", updateGameState);
         contract.off("BidPlaced", updateGameState);
         contract.off("LiarCalled", updateGameState);
         contract.off("GameEnded", updateGameState);
@@ -189,6 +176,7 @@ export default function GameplayPage({ params }: { params: Promise<{ id: string 
       };
     }
   }, [contract, walletAddress, resolvedParams.id]);
+
 
   // Game actions remain the same but use resolvedParams.id
   const handleMakeBid = async () => {
@@ -246,20 +234,112 @@ export default function GameplayPage({ params }: { params: Promise<{ id: string 
   const handleCallLiar = async () => {
     try {
       if (!contract) return;
+      
+      // First call liar
       const tx = await contract.callLiar(resolvedParams.id);
-      await tx.wait();
+      const receipt = await tx.wait();
+
+      // Get the LiarCalled event from transaction receipt
+      const liarCalledEvent = receipt.events?.find((e: any) => e.event === "LiarCalled");
+      
+      // After successful liar call, automatically reveal number
+      await handleRevealNumber();
+
+      // The GameEnded event will be emitted from determineWinner function
+      // Listen for GameEnded event
+      await contract.once("GameEnded", (roomId, winnerAddress, prizeAmount) => {
+        setWinner({
+          roomId: roomId,
+          address: winnerAddress,
+          amount: ethers.formatUnits(prizeAmount, 8),
+          reason: "Successfully caught the liar!" 
+        });
+        setShowWinnerModal(true);
+      });
+
     } catch (error) {
       console.error("Error calling liar:", error);
     }
   };
+  if(contract) {
+    contract.on("GameEnded", (roomId, winnerAddress, prizeAmount) => {
+      setWinner({
+        roomId: roomId,
+        address: winnerAddress,
+        amount: ethers.formatUnits(prizeAmount, 8),
+        reason: "Successfully caught the liar!" 
+      });
+      setShowWinnerModal(true);
+    });
+  }
+  const generateRandomSerialNumber = () => {
+    let number = '';
+    for (let i = 0; i < 6; i++) {
+      number += Math.floor(Math.random() * 10).toString();
+    }
+    return number;
+  };
 
   const handleStartGame = async () => {
+    setIsStartingGame(true);
     try {
       if (!contract) return;
-      const tx = await contract.startGame(resolvedParams.id);
+
+      // Get the number of active players
+      const roomDetails = await contract.getGameRoomDetails(resolvedParams.id);
+      const numberOfPlayers = roomDetails.players.length;
+
+      // Generate random serial numbers for each player
+      const serialNumbers = Array(numberOfPlayers).fill(0).map(() => {
+        const serialNumber = generateRandomSerialNumber();
+        return ethers.getBigInt(serialNumber);
+      });
+
+      console.log("Starting game with serial numbers:", serialNumbers);
+
+      // Call the smart contract's startGame function
+      const tx = await contract.startGame(
+        resolvedParams.id,
+        serialNumbers,
+        {
+          gasLimit: 1000000
+        }
+      );
+      
       await tx.wait();
+
+      // Update local game state
+      setGameState((prev: GameState) => ({
+        ...prev,
+        gameStatus: 3
+      }));
+
+      // Add loading state and success notification if needed
+      console.log("Game started successfully!");
+
     } catch (error) {
       console.error("Error starting game:", error);
+      // Add error handling notification if needed
+    } finally {
+      setIsStartingGame(false);
+    }
+  };
+
+  const handleRevealNumber = async () => {
+    setIsRevealing(true);
+    try {
+      if (!contract) return;
+      const tx = await contract.revealNumber(resolvedParams.id);
+      const receipt = await tx.wait();
+      const winnerRevealed = receipt.events?.find((e: any) => e.event === "GameEnded");
+      console.log("winnerRevealed", winnerRevealed);
+      setShowWinnerModal(true);
+      
+      console.log("Number revealed successfully");
+    } catch (error) {
+      console.error("Error revealing number:", error);
+    } finally {
+      setIsRevealing(false);
     }
   };
 
@@ -276,26 +356,38 @@ export default function GameplayPage({ params }: { params: Promise<{ id: string 
           <div className="flex justify-center mb-16">
             <button
               onClick={handleStartGame}
-              className="group relative inline-flex items-center justify-center px-8 py-3 
-                bg-gradient-to-r from-[#98C23D] to-[#7BA32F] rounded-lg
-                text-black font-semibold tracking-wider
+              disabled={gameState.gameStatus ==1}
+              className={`group relative inline-flex items-center justify-center px-8 py-3 
+                ${isStartingGame 
+                  ? 'bg-gray-500' 
+                  : 'bg-gradient-to-r from-[#98C23D] to-[#7BA32F]'} 
+                rounded-lg text-black font-semibold tracking-wider
                 transform transition-all duration-300 ease-in-out
                 hover:scale-105 active:scale-95
                 shadow-lg hover:shadow-[#98C23D]/50
-                disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled:opacity-50 disabled:cursor-not-allowed`}
             >
               <span className="absolute inset-0 bg-white/30 rounded-lg blur opacity-0 
                 group-hover:opacity-20 transition-opacity duration-300" />
               <span className="relative flex items-center gap-2">
-                Start Game
-                <svg 
-                  className="w-5 h-5 transform group-hover:translate-x-1 transition-transform duration-300" 
-                  fill="none" 
-                  viewBox="0 0 24 24" 
-                  stroke="currentColor"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
-                </svg>
+                {isStartingGame ? (
+                  <>
+                    Starting Game...
+                    <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full" />
+                  </>
+                ) : (
+                  <>
+                    Start Game
+                    <svg 
+                      className="w-5 h-5 transform group-hover:translate-x-1 transition-transform duration-300" 
+                      fill="none" 
+                      viewBox="0 0 24 24" 
+                      stroke="currentColor"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+                    </svg>
+                  </>
+                )}
               </span>
             </button>
           </div>
@@ -318,11 +410,11 @@ export default function GameplayPage({ params }: { params: Promise<{ id: string 
                   </div>
                   {gameState.currentBid && (
                     <div className="text-xs text-zinc-400 mt-1">
-                      Bet: {ethers.formatEther(gameState.currentBid.bidAmount || 0)} ETH
+                      Bet: {ethers.formatUnits(gameState.currentBid.bidAmount || 0, 8)} HBAR
                     </div>
                   )}
                   <div className="text-xs text-zinc-400 mt-1">
-                    Pool: {ethers.formatEther(gameState.prizePool || 0)} ETH
+                    Pool: {ethers.formatUnits(gameState.prizePool || 0, 8)} HBAR
                   </div>
                 </div>
               </div>
@@ -571,6 +663,135 @@ export default function GameplayPage({ params }: { params: Promise<{ id: string 
           </div>
         </div>
       </div>
+
+      {showWinnerModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          {/* Backdrop with blur */}
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" 
+            onClick={() => setShowWinnerModal(false)} 
+          />
+          
+          {/* Modal Content */}
+          <motion.div
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{
+              type: "spring",
+              stiffness: 260,
+              damping: 20
+            }}
+            className="relative z-10 bg-gradient-to-br from-zinc-900 to-zinc-800 
+              rounded-2xl p-8 max-w-lg w-full mx-4 border border-[#98C23D]/30
+              shadow-[0_0_50px_rgba(152,194,61,0.3)]"
+          >
+            {/* Confetti Effect */}
+            <div className="absolute -inset-1">
+              <div className="w-full h-full rotate-180 opacity-30 blur-sm"
+                style={{
+                  background: `
+                    radial-gradient(circle at top left, #98C23D, transparent 50%),
+                    radial-gradient(circle at top right, #7BA32F, transparent 50%),
+                    radial-gradient(at bottom left, #98C23D, transparent 50%),
+                    radial-gradient(at bottom right, #7BA32F, transparent 50%)
+                  `
+                }}
+              />
+            </div>
+
+            {/* Content */}
+            <div className="relative">
+              {/* Trophy Icon */}
+              <div className="flex justify-center mb-6">
+                <motion.div
+                  animate={{
+                    scale: [1, 1.2, 1],
+                    rotate: [0, 5, -5, 0]
+                  }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: "easeInOut"
+                  }}
+                  className="w-24 h-24 bg-gradient-to-br from-yellow-400 to-yellow-600 
+                    rounded-full flex items-center justify-center shadow-lg"
+                >
+                  <span className="text-4xl">🏆</span>
+                </motion.div>
+              </div>
+
+              {/* Winner Text */}
+              <h2 className="text-center text-3xl font-bold text-[#98C23D] mb-4">
+                Winner!
+              </h2>
+              
+              {/* Winner Address */}
+              <div className="text-center mb-6">
+                <div className="text-xl text-white/90 mb-2">
+                  {winner?.address.slice(0, 6)}{winner?.address.slice(-4)}
+                </div>
+                <div className="text-sm text-zinc-400">
+                  {winner?.reason}
+                </div>
+              </div>
+
+              {/* Prize Amount */}
+              <div className="bg-zinc-900/50 rounded-xl p-4 mb-6 text-center">
+                <div className="text-sm text-zinc-400 mb-1">Prize Pool</div>
+                <div className="text-2xl font-bold text-[#98C23D]">
+                  {winner?.amount} HBAR
+                </div>
+              </div>
+
+              {/* Close Button */}
+              <button
+                onClick={() => setShowWinnerModal(false)}
+                className="w-full bg-gradient-to-r from-[#98C23D] to-[#7BA32F] 
+                  text-black font-bold py-3 px-6 rounded-lg
+                  transform transition-all duration-300
+                  hover:scale-105 active:scale-95
+                  shadow-lg hover:shadow-[#98C23D]/50"
+              >
+                Close
+              </button>
+            </div>
+
+            {/* Animated Particles */}
+            {Array.from({ length: 20 }).map((_, i) => (
+              <motion.div
+                key={i}
+                initial={{
+                  x: 0,
+                  y: 0,
+                  scale: 0,
+                  opacity: 1
+                }}
+                animate={{
+                  x: Math.random() * 400 - 200,
+                  y: Math.random() * 400 - 200,
+                  scale: Math.random() * 2,
+                  opacity: 0
+                }}
+                transition={{
+                  duration: Math.random() * 2 + 1,
+                  repeat: Infinity,
+                  delay: Math.random() * 2
+                }}
+                className="absolute top-1/2 left-1/2 w-2 h-2 rounded-full"
+                style={{
+                  background: i % 2 === 0 ? '#98C23D' : '#7BA32F'
+                }}
+              />
+            ))}
+          </motion.div>
+        </div>
+      )}
+
+      {isRevealing && (
+        <div className="text-center mt-4">
+          <div className="animate-spin h-8 w-8 border-4 border-[#98C23D] border-t-transparent rounded-full mx-auto mb-2"></div>
+          <p className="text-zinc-400">Revealing numbers...</p>
+        </div>
+      )}
     </div>
   );
 }

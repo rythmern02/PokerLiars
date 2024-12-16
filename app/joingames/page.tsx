@@ -1,16 +1,8 @@
 "use client";
-import { Press_Start_2P } from "next/font/google";
-
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ethers } from "ethers";
 import { useGlobalContext } from '@/app/context/GlobalContext';
-
-const pixelFont = Press_Start_2P({
-  weight: "400",
-  subsets: ["latin"],
-  variable: "--font-pixel",
-});
 
 interface GameRoom {
   roomId: number;
@@ -113,35 +105,35 @@ export default function JoinBid() {
   };
 
   return (
-    <div className={`min-h-screen bg-[#0A0A0A] ${pixelFont.variable}`}>
+    <div className={`min-h-screen bg-[#0A0A0A]`}>
       {/* Background Elements */}
       <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.03)_1px,transparent_1px)] bg-[size:32px_32px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000,transparent)]" />
 
       <div className="relative z-10 p-8">
         {/* Header Section */}
-        <h1 className="text-4xl md:text-6xl text-white font-[var(--font-pixel)] mb-4">
+        <h1 className="text-4xl md:text-[15vh] text-white  mb-4 ">
           Available Tables
         </h1>
-        <p className="text-zinc-400 text-lg mb-12">
+        <p className="text-zinc-400 text-[5vh] mb-12 py-4 ">
           Choose your table and join the game
         </p>
 
         {/* Games Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {loading ? (
-            <div className="text-white">Loading games...</div>
+            <div className="text-white text-7xl">Loading games...</div>
           ) : activeGames.length === 0 ? (
-            <div className="text-zinc-400">No active games available</div>
+            <div className="text-zinc-400 text-7xl">No active games available.....</div>
           ) : (
             activeGames.map((game) => (
               <div
                 key={game.roomId}
-                className="group bg-gradient-to-r from-zinc-900 to-zinc-800 rounded-xl p-6 hover:scale-[1.02] 
+                className="group bg-gradient-to-r  from-zinc-900 to-zinc-800 rounded-xl p-6 hover:scale-[1.02] 
                          transition-all duration-300 border border-zinc-800 hover:border-[#98C23D]/50"
               >
                 {/* Room Header */}
                 <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-2xl text-white font-semibold">
+                    <h2 className="text-5xl text-white font-semibold ">
                     Room #{game.roomId}
                   </h2>
                   <div className="px-3 py-1 rounded-full bg-[#98C23D]/20 text-[#98C23D] text-sm">
@@ -150,20 +142,20 @@ export default function JoinBid() {
                 </div>
 
                 {/* Room Details */}
-                <div className="space-y-2 text-sm text-zinc-400 mb-4">
+                <div className="space-y-2 text-3xl text-zinc-400 mb-4">
                   <div className="flex justify-between">
                     <span>Creator</span>
                     <span className="text-[#98C23D]">
                       {game.creator.slice(0, 6)}...{game.creator.slice(-4)}
                     </span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex justify-between text-3xl">
                     <span>Prize Pool</span>
-                    <span className="text-[#98C23D]">
+                    <span className="text-[#98C23D] ">
                       {ethers.formatEther(game.totalPrizePool)} ETH
                     </span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex justify-between text-3xl">
                     <span>Created</span>
                     <span>
                       {new Date(Number(game.creationTimestamp) * 1000).toLocaleString()}
@@ -186,7 +178,7 @@ export default function JoinBid() {
         </div>
 
         {/* Stats Footer */}
-        <div className="mt-12 flex gap-8 text-zinc-400 text-sm">
+        <div className="mt-12 flex gap-8 text-zinc-400 text-3xl">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-[#98C23D]/50 animate-ping" />
             <span>{activeGames.length} Active Games</span>

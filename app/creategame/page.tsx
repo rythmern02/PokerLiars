@@ -1,15 +1,8 @@
 'use client';
-import { Press_Start_2P } from "next/font/google";
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useGlobalContext } from '@/app/context/GlobalContext';
 import { ethers } from "ethers";
-
-const pixelFont = Press_Start_2P({
-  weight: "400",
-  subsets: ["latin"],
-  variable: "--font-pixel",
-});
 
 // Floating number component for background effect
 const FloatingNumber = ({
@@ -47,8 +40,12 @@ export default function CreateGame() {
       // Convert entry fee to Wei (assuming entryFee is in ETH)
       const entryFeeInWei = ethers.parseEther(entryFee.toString());
       
-      // Call the contract function
-      const tx = await contract.createGameRoom();
+      // Call the contract function with the required parameters
+      const tx = await contract.createGameRoom(
+        entryFeeInWei,  // _minBid parameter
+        playerCount     // _numberOfPlayers parameter
+      );
+      
       const receipt = await tx.wait();
       console.log("Receipt:", receipt);
       
@@ -76,16 +73,23 @@ export default function CreateGame() {
 
       // Redirect to the gameplay page with the new room ID
       router.push(`/gameplay/${roomId}`);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating game:', error);
-      alert('Failed to create game. Please try again.');
+      // Provide more specific error messages based on the error
+      if (error?.message?.includes("Minimum bid is too low")) {
+        alert('Entry fee is too low. Please increase the amount.');
+      } else if (error?.message?.includes("Invalid number of players")) {
+        alert('Invalid number of players. Please choose between 2 and 8 players.');
+      } else {
+        alert('Failed to create game. Please try again.');
+      }
     } finally {
       setIsCreating(false);
     }
   };
 
   return (
-    <div className={`min-h-screen bg-[#0A0A0A] ${pixelFont.variable}`}>
+    <div className={`min-h-screen bg-[#0A0A0A]`}>
       {/* Background Elements */}
       <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.03)_1px,transparent_1px)] bg-[size:32px_32px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000,transparent)]" />
 
@@ -100,10 +104,10 @@ export default function CreateGame() {
       <div className="relative z-10 container mx-auto px-4 py-12 min-h-screen flex flex-col">
         {/* Header Section */}
         <div className="text-center mb-16">
-          <h1 className="text-5xl md:text-7xl text-white font-[var(--font-pixel)] mb-6 animate-fade-in">
+          <h1 className="text-[18vh] md:text-7xl text-white font-[var(--font-pixel)] mb-6 animate-fade-in">
             Create a new Liar's Poker
           </h1>
-          <p className="text-zinc-400 text-xl">Set up your perfect game</p>
+          <p className="text-zinc-400 text-5xl">Set up your perfect game</p>
         </div>
 
         {/* Game Creation Form */}
@@ -111,7 +115,7 @@ export default function CreateGame() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
             {/* Player Count Input */}
             <div className="group bg-gradient-to-r from-zinc-900 to-zinc-800 rounded-xl p-8 border border-zinc-800 hover:border-[#98C23D]/50 transition-all">
-              <label className="block text-zinc-400 text-lg mb-4">
+              <label className="block text-zinc-400 text-3xl mb-4">
                 Number of Players
               </label>
               <input
@@ -120,22 +124,22 @@ export default function CreateGame() {
                 max="8"
                 value={playerCount}
                 onChange={(e) => setPlayerCount(Math.min(8, Math.max(2, parseInt(e.target.value))))}
-                className="w-full bg-zinc-900 text-[#98C23D] border border-zinc-700 rounded-lg px-6 py-4 text-lg focus:outline-none focus:border-[#98C23D] transition-all"
+                className="w-full bg-zinc-900 text-[#98C23D] border border-zinc-700 rounded-lg px-6 py-4 text-3xl focus:outline-none focus:border-[#98C23D] transition-all"
                 placeholder="2-8 players"
               />
             </div>
 
             {/* Initial Stake Input */}
             <div className="group bg-gradient-to-r from-zinc-900 to-zinc-800 rounded-xl p-8 border border-zinc-800 hover:border-[#98C23D]/50 transition-all">
-              <label className="block text-zinc-400 text-lg mb-4">
-                Initial Stake ($)
+              <label className="block text-zinc-400 text-3xl mb-4">
+                Minimum Bid (HBAR)
               </label>
               <input
                 type="number"
                 min="100"
                 value={entryFee}
                 onChange={(e) => setEntryFee(Math.max(100, parseInt(e.target.value)))}
-                className="w-full bg-zinc-900 text-[#98C23D] border border-zinc-700 rounded-lg px-6 py-4 text-lg focus:outline-none focus:border-[#98C23D] transition-all"
+                className="w-full bg-zinc-900 text-[#98C23D] border border-zinc-700 rounded-lg px-6 py-4 text-3xl focus:outline-none focus:border-[#98C23D] transition-all"
                 placeholder="Minimum $100"
               />
             </div>
@@ -143,7 +147,7 @@ export default function CreateGame() {
 
           {/* Game Mode Selection */}
           <div className="mb-12">
-            <h3 className="text-white text-2xl font-[var(--font-pixel)] mb-8 text-center">
+            <h3 className="text-white text-5xl font-[var(--font-pixel)] mb-8 text-center">
               Select Game Mode
             </h3>
 
@@ -158,7 +162,7 @@ export default function CreateGame() {
                     <div className={`w-4 h-4 rounded-full ${gameMode === 'video' ? 'bg-[#98C23D]' : 'bg-transparent'}`} />
                   </div>
                   <div>
-                    <h4 className="text-white text-xl mb-2">Video & Voice</h4>
+                    <h4 className="text-white text-3xl mb-2">Video & Voice</h4>
                     <p className="text-zinc-400">
                       Full immersive experience with video and voice chat
                     </p>
@@ -176,7 +180,7 @@ export default function CreateGame() {
                     <div className={`w-4 h-4 rounded-full ${gameMode === 'ai' ? 'bg-[#98C23D]' : 'bg-transparent'}`} />
                   </div>
                   <div>
-                    <h4 className="text-white text-xl mb-2">AI Text Chat</h4>
+                    <h4 className="text-white text-3xl mb-2">AI Text Chat</h4>
                     <p className="text-zinc-400">
                       Play with AI-powered chat for a unique experience
                     </p>
@@ -190,7 +194,7 @@ export default function CreateGame() {
           <button
             onClick={handleCreateGame}
             disabled={isCreating}
-            className={`w-full bg-[#98C23D] hover:bg-[#88b22d] text-black text-xl px-8 py-6 rounded-lg font-medium 
+            className={`w-full bg-[#98C23D] hover:bg-[#88b22d] text-black text-3xl px-8 py-6 rounded-lg font-medium 
                        transition-all hover:scale-[1.02] hover:shadow-lg hover:shadow-[#98C23D]/20
                        flex items-center justify-center gap-3 group
                        ${isCreating ? 'opacity-50 cursor-not-allowed' : ''}`}
@@ -212,9 +216,9 @@ export default function CreateGame() {
           <div className="mt-12 flex justify-center gap-12 text-zinc-400">
             <div className="flex items-center gap-3">
               <div className="w-3 h-3 rounded-full bg-[#98C23D]/50 animate-ping" />
-              <span className="text-lg">Games Created Today: 24</span>
+              <span className="text-3xl">Games Created Today: 24</span>
             </div>
-            <div className="text-lg">
+            <div className="text-3xl">
               Average Stakes: <span className="text-[#98C23D]">$500</span>
             </div>
           </div>

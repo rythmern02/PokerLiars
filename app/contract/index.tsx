@@ -1,4 +1,6 @@
-export const ADDRESS: any = '0x9A62C9D24d8b58D62AC951959C9Dd3CF38aF8fAa';
+// export const ADDRESS: any = '0x9A62C9D24d8b58D62AC951959C9Dd3CF38aF8fAa';
+export const ADDRESS: any = '0x1E8C43C3b2796E8b45B259b1F2DaFc678C1fB200';
+
 export const  ABI: any  = [
 	{
 		"inputs": [],
@@ -56,7 +58,18 @@ export const  ABI: any  = [
 		"type": "function"
 	},
 	{
-		"inputs": [],
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_minBid",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_numberOfPlayers",
+				"type": "uint256"
+			}
+		],
 		"name": "createGameRoom",
 		"outputs": [
 			{
@@ -288,6 +301,18 @@ export const  ABI: any  = [
 				"internalType": "uint256",
 				"name": "timestamp",
 				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "minBid",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "numberOfPlayers",
+				"type": "uint256"
 			}
 		],
 		"name": "RoomCreated",
@@ -299,6 +324,11 @@ export const  ABI: any  = [
 				"internalType": "uint256",
 				"name": "_roomId",
 				"type": "uint256"
+			},
+			{
+				"internalType": "uint256[]",
+				"name": "_serialNumbers",
+				"type": "uint256[]"
 			}
 		],
 		"name": "startGame",
@@ -373,6 +403,16 @@ export const  ABI: any  = [
 			{
 				"internalType": "uint256",
 				"name": "creationTimestamp",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "minBid",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "numberOfPlayers",
 				"type": "uint256"
 			},
 			{
